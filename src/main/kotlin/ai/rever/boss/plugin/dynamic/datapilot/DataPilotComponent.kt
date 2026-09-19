@@ -256,7 +256,7 @@ class DataPilotComponent(
                         }
 
                         // --------------------------------------------------
-                        // DATA QUALITY
+                        // EXPLAINABLE DATA QUALITY
                         // --------------------------------------------------
 
                         Divider()
@@ -280,6 +280,37 @@ class DataPilotComponent(
                                 qualityMessage(
                                     data.qualityScore
                                 ),
+                            color =
+                                BossThemeColors.TextSecondary
+                        )
+
+                        Text(
+                            text =
+                                "Quality Breakdown",
+                            color =
+                                BossThemeColors.TextPrimary
+                        )
+
+                        Text(
+                            text =
+                                "Completeness: " +
+                                    "${data.completenessScore}/100",
+                            color =
+                                BossThemeColors.TextSecondary
+                        )
+
+                        Text(
+                            text =
+                                "Duplicate Control: " +
+                                    "${data.duplicateScore}/100",
+                            color =
+                                BossThemeColors.TextSecondary
+                        )
+
+                        Text(
+                            text =
+                                "Outlier Safety: " +
+                                    "${data.outlierScore}/100",
                             color =
                                 BossThemeColors.TextSecondary
                         )
@@ -501,7 +532,7 @@ class DataPilotComponent(
                                                 column.samples
                                                     .joinToString(", "),
                                         color =
-                                            BossThemeColors.TextSecondary
+                                        BossThemeColors.TextSecondary
                                     )
                                 }
                             }
@@ -540,23 +571,13 @@ class DataPilotComponent(
     // QUALITY MESSAGE
     // --------------------------------------------------------------
 
-    private fun qualityMessage(
-        score: Int
-    ): String {
-
-        return when {
-
-            score >= 95 ->
-                "Excellent dataset quality"
-
-            score >= 80 ->
-                "Good dataset quality — minor cleaning recommended"
-
-            score >= 60 ->
-                "Moderate dataset quality — cleaning recommended"
-
-            else ->
-                "Poor dataset quality — significant cleaning required"
+    private fun qualityMessage(score: Int): String {
+    return when {
+        score >= 98 -> "Excellent dataset quality"
+        score >= 90 -> "High-quality dataset — minor issues detected"
+        score >= 75 -> "Good dataset quality — cleaning recommended"
+        score >= 60 -> "Moderate dataset quality — cleaning required"
+        else -> "Poor dataset quality — significant cleaning required"
         }
     }
 }

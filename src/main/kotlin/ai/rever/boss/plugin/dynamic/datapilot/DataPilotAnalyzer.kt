@@ -17,7 +17,13 @@ data class DatasetProfile(
     val columns: Int,
     val duplicateRows: Int,
     val missingValues: Int,
+
+    // Explainable quality score
     val qualityScore: Int,
+    val completenessScore: Int,
+    val duplicateScore: Int,
+    val outlierScore: Int,
+
     val columnProfiles: List<ColumnProfile>,
     val issues: List<String>,
     val recommendations: List<String>,
@@ -139,38 +145,6 @@ object DataPilotAnalyzer {
         val totalCells =
             rows * columns
 
-        val missingRatio =
-            if (totalCells == 0) {
-                0.0
-            } else {
-                missingValues.toDouble() /
-                    totalCells
-            }
-
-        val duplicateRatio =
-            if (rows == 0) {
-                0.0
-            } else {
-                duplicateRows.toDouble() /
-                    rows
-            }
-
-        // ------------------------------------------------------------
-        // QUALITY SCORE
-        // ------------------------------------------------------------
-
-        val qualityScore =
-            (
-                100 -
-                    (missingRatio * 50) -
-                    (duplicateRatio * 30)
-                )
-                .coerceIn(
-                    0.0,
-                    100.0
-                )
-                .toInt()
-
         // ------------------------------------------------------------
         // TARGET DETECTION
         // ------------------------------------------------------------
@@ -281,6 +255,95 @@ object DataPilotAnalyzer {
             }
 
         // ------------------------------------------------------------
+        // OUTLIER DETECTION
+        // ------------------------------------------------------------
+
+        val suspiciousValues =
+            detectNumericOutliers(
+                headers,
+                dataRows
+            )
+
+        // ------------------------------------------------------------
+        // EXPLAINABLE QUALITY COMPONENTS
+        // ------------------------------------------------------------
+
+        val completenessScore =
+            if (totalCells == 0) {
+                0
+            } else {
+                (
+                    (
+                        totalCells - missingValues
+                    ).toDouble() /
+                        totalCells *
+                        100
+                    )
+                    .coerceIn(
+                        0.0,
+                        100.0
+                    )
+                    .toInt()
+            }
+
+        val duplicateScore =
+            if (rows == 0) {
+                0
+            } else {
+                (
+                    (
+                        rows - duplicateRows
+                    ).toDouble() /
+                        rows *
+                        100
+                    )
+                    .coerceIn(
+                        0.0,
+                        100.0
+                    )
+                    .toInt()
+            }
+
+        /*
+         * Each column containing potential outliers
+         * reduces the outlier component by 10 points.
+         *
+         * This intentionally uses flagged columns rather
+         * than raw values so one extreme value doesn't
+         * completely destroy the quality score.
+         */
+        val outlierPenalty =
+            suspiciousValues.size * 10
+
+        val outlierScore =
+            (
+                100 - outlierPenalty
+            )
+                .coerceIn(
+                    0,
+                    100
+                )
+
+        /*
+         * Overall score:
+         *
+         * 40% completeness
+         * 30% duplicate control
+         * 30% outlier safety
+         */
+        val qualityScore =
+            (
+                completenessScore * 0.40 +
+                    duplicateScore * 0.30 +
+                    outlierScore * 0.30
+                )
+                .toInt()
+                .coerceIn(
+                    0,
+                    100
+                )
+
+        // ------------------------------------------------------------
         // ISSUES
         // ------------------------------------------------------------
 
@@ -312,16 +375,6 @@ object DataPilotAnalyzer {
                 "${emptyColumns.size} completely empty column(s) detected."
             )
         }
-
-        // ------------------------------------------------------------
-        // OUTLIER DETECTION
-        // ------------------------------------------------------------
-
-        val suspiciousValues =
-            detectNumericOutliers(
-                headers,
-                dataRows
-            )
 
         if (suspiciousValues.isNotEmpty()) {
 
@@ -428,6 +481,15 @@ object DataPilotAnalyzer {
 
             qualityScore =
                 qualityScore,
+
+            completenessScore =
+                completenessScore,
+
+            duplicateScore =
+                duplicateScore,
+
+            outlierScore =
+                outlierScore,
 
             columnProfiles =
                 columnProfiles,
