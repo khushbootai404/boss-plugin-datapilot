@@ -1,0 +1,22 @@
+customer_id,age,tenure,monthly_charges,contract,churn
+C001,25,2,79.5,Month-to-month,Yes
+C002,34,24,65.2,One year,No
+C003,29,8,,Month-to-month,Yes
+C004,45,36,52.4,Two year,No
+C005,52,5,91.7,Month-to-month,Yes
+C006,41,18,70.1,One year,No
+C007,33,12,64.8,Month-to-month,No
+C008,29,7,82.3,Month-to-month,Yes
+C009,56,48,55.9,Two year,No
+C010,38,14,71.4,One year,No
+C011,44,3,88.6,Month-to-month,Yes
+C012,31,9,76.2,Month-to-month,Yes
+C013,47,30,59.5,Two year,No
+C014,36,20,67.8,One year,No
+C015,28,4,95.1,Month-to-month,Yes
+C016,50,42,53.7,Two year,No
+C017,39,16,69.2,One year,No
+C018,27,6,85.4,Month-to-month,Yes
+C019,61,55,49.8,Two year,No
+C020,35,11,73.6,Month-to-month,Yes
+C020,35,11,73.6,Month-to-month,Yes

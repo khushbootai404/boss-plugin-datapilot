@@ -1,0 +1,17 @@
+{
+  "manifestVersion": 1,
+  "pluginId": "ai.rever.boss.plugin.dynamic.datapilot",
+  "displayName": "DataPilot",
+  "version": "0.1.0",
+  "apiVersion": "1.0.20",
+  "minBossVersion": "8.16.30",
+  "mainClass": "ai.rever.boss.plugin.dynamic.datapilot.DataPilotDynamicPlugin",
+  "type": "panel",
+  "description": "Dataset intelligence and data quality analysis for BOSS",
+  "author": "Khushboo",
+"url": "https://github.com/khushbootai404/boss-plugin-datapilot",
+  "panel": {
+    "position": "left_bottom",
+    "priority": 50
+  }
+}
