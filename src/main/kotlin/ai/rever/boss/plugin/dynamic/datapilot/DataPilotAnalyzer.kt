@@ -23,7 +23,12 @@ data class DatasetProfile(
     val recommendations: List<String>,
     val mlReady: Boolean,
     val potentialTarget: String?,
-    val suspiciousValues: List<String>
+    val suspiciousValues: List<String>,
+
+    // Target intelligence
+    val targetDistribution: List<String>,
+    val numericFeatureCount: Int,
+    val textFeatureCount: Int
 )
 
 object DataPilotAnalyzer {
@@ -94,7 +99,7 @@ object DataPilotAnalyzer {
                                 .toDouble() /
                                 rows *
                                 100
-                        ).toInt()
+                            ).toInt()
                     }
 
                 ColumnProfile(
@@ -102,16 +107,21 @@ object DataPilotAnalyzer {
                         header.ifBlank {
                             "Column ${index + 1}"
                         },
+
                     type =
                         inferType(validValues),
+
                     missing =
                         missing,
+
                     unique =
                         unique,
+
                     samples =
                         validValues
                             .distinct()
                             .take(3),
+
                     completeness =
                         completeness
                 )
@@ -162,6 +172,115 @@ object DataPilotAnalyzer {
                 .toInt()
 
         // ------------------------------------------------------------
+        // TARGET DETECTION
+        // ------------------------------------------------------------
+
+        val targetCandidates =
+            listOf(
+                "target",
+                "label",
+                "class",
+                "outcome",
+                "churn",
+                "y"
+            )
+
+        val potentialTarget =
+            columnProfiles
+                .firstOrNull {
+
+                    targetCandidates.contains(
+                        it.name.lowercase()
+                    )
+                }
+                ?.name
+
+        // ------------------------------------------------------------
+        // TARGET INTELLIGENCE
+        // ------------------------------------------------------------
+
+        val targetDistribution =
+            if (potentialTarget != null) {
+
+                val targetIndex =
+                    headers.indexOfFirst {
+                        it.equals(
+                            potentialTarget,
+                            ignoreCase = true
+                        )
+                    }
+
+                if (targetIndex >= 0) {
+
+                    val targetValues =
+                        dataRows
+                            .mapNotNull { row ->
+
+                                row.getOrNull(
+                                    targetIndex
+                                )
+                                    ?.trim()
+                                    ?.takeUnless {
+                                        isMissing(it)
+                                    }
+                            }
+
+                    val totalTargetValues =
+                        targetValues.size
+
+                    targetValues
+                        .groupingBy {
+                            it
+                        }
+                        .eachCount()
+                        .entries
+                        .sortedByDescending {
+                            it.value
+                        }
+                        .map { entry ->
+
+                            val percentage =
+                                if (
+                                    totalTargetValues == 0
+                                ) {
+                                    0.0
+                                } else {
+                                    entry.value
+                                        .toDouble() /
+                                        totalTargetValues *
+                                        100
+                                }
+
+                            "${entry.key}: " +
+                                "${entry.value} " +
+                                "(${formatPercentage(percentage)}%)"
+                        }
+
+                } else {
+                    emptyList()
+                }
+
+            } else {
+                emptyList()
+            }
+
+        // ------------------------------------------------------------
+        // FEATURE COUNTS
+        // ------------------------------------------------------------
+
+        val numericFeatureCount =
+            columnProfiles.count {
+                it.type == "Numeric" &&
+                    it.name != potentialTarget
+            }
+
+        val textFeatureCount =
+            columnProfiles.count {
+                it.type == "Text" &&
+                    it.name != potentialTarget
+            }
+
+        // ------------------------------------------------------------
         // ISSUES
         // ------------------------------------------------------------
 
@@ -195,7 +314,7 @@ object DataPilotAnalyzer {
         }
 
         // ------------------------------------------------------------
-        // OUTLIER / SUSPICIOUS VALUE DETECTION
+        // OUTLIER DETECTION
         // ------------------------------------------------------------
 
         val suspiciousValues =
@@ -253,6 +372,13 @@ object DataPilotAnalyzer {
             )
         }
 
+        if (potentialTarget != null) {
+
+            recommendations.add(
+                "Target column '$potentialTarget' detected for supervised ML."
+            )
+        }
+
         if (qualityScore >= 95) {
 
             recommendations.add(
@@ -273,30 +399,6 @@ object DataPilotAnalyzer {
         }
 
         // ------------------------------------------------------------
-        // TARGET DETECTION
-        // ------------------------------------------------------------
-
-        val targetCandidates =
-            listOf(
-                "target",
-                "label",
-                "class",
-                "outcome",
-                "churn",
-                "y"
-            )
-
-        val potentialTarget =
-            columnProfiles
-                .firstOrNull {
-
-                    targetCandidates.contains(
-                        it.name.lowercase()
-                    )
-                }
-                ?.name
-
-        // ------------------------------------------------------------
         // ML READINESS
         // ------------------------------------------------------------
 
@@ -308,6 +410,7 @@ object DataPilotAnalyzer {
                 suspiciousValues.isEmpty()
 
         return DatasetProfile(
+
             fileName =
                 file.name,
 
@@ -342,7 +445,16 @@ object DataPilotAnalyzer {
                 potentialTarget,
 
             suspiciousValues =
-                suspiciousValues
+                suspiciousValues,
+
+            targetDistribution =
+                targetDistribution,
+
+            numericFeatureCount =
+                numericFeatureCount,
+
+            textFeatureCount =
+                textFeatureCount
         )
     }
 
@@ -374,7 +486,6 @@ object DataPilotAnalyzer {
                         ?.toDoubleOrNull()
                 }
 
-            // Need enough values for a meaningful IQR.
             if (numericValues.size < 4) {
                 return@forEachIndexed
             }
@@ -397,8 +508,6 @@ object DataPilotAnalyzer {
             val iqr =
                 q3 - q1
 
-            // If all values are effectively identical,
-            // there is no meaningful outlier boundary.
             if (iqr == 0.0) {
                 return@forEachIndexed
             }
@@ -461,6 +570,23 @@ object DataPilotAnalyzer {
             (1 - weight) +
             sortedValues[upper] *
             weight
+    }
+
+    // ------------------------------------------------------------
+    // PERCENTAGE FORMATTING
+    // ------------------------------------------------------------
+
+    private fun formatPercentage(
+        value: Double
+    ): String {
+
+        return if (
+            value == value.toInt().toDouble()
+        ) {
+            value.toInt().toString()
+        } else {
+            "%.1f".format(value)
+        }
     }
 
     // ------------------------------------------------------------

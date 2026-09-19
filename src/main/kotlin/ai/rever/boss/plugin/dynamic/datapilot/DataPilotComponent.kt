@@ -337,6 +337,72 @@ class DataPilotComponent(
                         }
 
                         // --------------------------------------------------
+                        // TARGET INTELLIGENCE
+                        // --------------------------------------------------
+
+                        if (
+                            data.potentialTarget != null
+                        ) {
+
+                            Divider()
+
+                            Text(
+                                text =
+                                    "🎯 Target Intelligence",
+                                color =
+                                    BossThemeColors.TextPrimary
+                            )
+
+                            Text(
+                                text =
+                                    "Detected Target: " +
+                                        data.potentialTarget,
+                                color =
+                                    BossThemeColors.TextPrimary
+                            )
+
+                            if (
+                                data.targetDistribution.isNotEmpty()
+                            ) {
+
+                                Text(
+                                    text =
+                                        "Target Distribution",
+                                    color =
+                                        BossThemeColors.TextPrimary
+                                )
+
+                                data.targetDistribution
+                                    .forEach { distribution ->
+
+                                        Text(
+                                            text =
+                                                "• $distribution",
+                                            color =
+                                                BossThemeColors
+                                                    .TextSecondary
+                                        )
+                                    }
+                            }
+
+                            Text(
+                                text =
+                                    "Numeric Features: " +
+                                        "${data.numericFeatureCount}",
+                                color =
+                                    BossThemeColors.TextSecondary
+                            )
+
+                            Text(
+                                text =
+                                    "Text Features: " +
+                                        "${data.textFeatureCount}",
+                                color =
+                                    BossThemeColors.TextSecondary
+                            )
+                        }
+
+                        // --------------------------------------------------
                         // ML READINESS
                         // --------------------------------------------------
 
@@ -359,29 +425,6 @@ class DataPilotComponent(
                             color =
                                 BossThemeColors.TextPrimary
                         )
-
-                        // --------------------------------------------------
-                        // TARGET COLUMN
-                        // --------------------------------------------------
-
-                        data.potentialTarget?.let { target ->
-
-                            Divider()
-
-                            Text(
-                                text =
-                                    "🎯 Potential Target Column",
-                                color =
-                                    BossThemeColors.TextPrimary
-                            )
-
-                            Text(
-                                text =
-                                    target,
-                                color =
-                                    BossThemeColors.TextSecondary
-                            )
-                        }
 
                         // --------------------------------------------------
                         // RECOMMENDATIONS
